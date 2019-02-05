@@ -309,10 +309,18 @@ void editor_draw_rows(struct abuf *ab) {
     }
 
     ab_append(ab, "\x1b[K", 3);
-    if (y < E.screenrows - 1) {
-      ab_append(ab, "\r\n", 2);
-    }
+    ab_append(ab, "\r\n", 2);
   }
+}
+
+void editor_draw_status_bar(struct abuf *ab) {
+  ab_append(ab, "\x1b[7m", 4);
+  int len = 0;
+  while (len < E.screencols) {
+    ab_append(ab, " ", 1);
+    len++;
+  }
+  ab_append(ab, "\x1b[m", 3);
 }
 
 void editor_refresh_screen() {
@@ -324,6 +332,7 @@ void editor_refresh_screen() {
   ab_append(&ab, "\x1b[H", 3);
 
   editor_draw_rows(&ab);
+  editor_draw_status_bar(&ab);
 
   char buf[32];
   snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoff) + 1,
@@ -434,6 +443,7 @@ void init_editor() {
 
   if (get_window_size(&E.screenrows, &E.screencols) == -1)
     die("get_window_size");
+  E.screenrows -= 1;
 }
 
 int main(int argc, char *argv[]) {
