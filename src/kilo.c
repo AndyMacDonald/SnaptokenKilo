@@ -62,6 +62,10 @@ struct editor_config {
 
 struct editor_config E;
 
+/*** prototypes ***/
+
+void editor_set_status_message(const char *fmt, ...);
+
 /*** terminal ***/
 
 void die(const char *s) {
@@ -298,12 +302,15 @@ void editor_save() {
       if (write(fd, buf, len) == len) {
         close(fd);
         free(buf);
+	editor_set_status_message("%d bytes written to disk", len);
+	return;
       }
     }
     close(fd);
   }
 
   free(buf);
+  editor_set_status_message("Can't save! I/O error: %s", strerror(errno));
 }
 
 /*** append buffer ***/
@@ -576,7 +583,7 @@ int main(int argc, char *argv[]) {
     editor_open(argv[1]);
   }
 
-  editor_set_status_message("HELP: Ctrl-Q = quit");
+  editor_set_status_message("HELP: Ctrl-S = save | Ctrl-Q = quit");
 
   while (1) {
     editor_refresh_screen();
