@@ -294,14 +294,15 @@ void editor_save() {
 
   int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
   if (fd != -1) {
-    if(ftruncate(fd, len) != -1) {/*;*/
-      if (write(fd, buf, len) == len) { /*;*/
+    if (ftruncate(fd, len) != -1) {
+      if (write(fd, buf, len) == len) {
         close(fd);
         free(buf);
       }
     }
-    close(fd); /*b);*/
+    close(fd);
   }
+
   free(buf);
 }
 
