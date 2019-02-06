@@ -527,6 +527,7 @@ void editor_move_cursor(int key) {
 
   switch (key) {
   case ARROW_LEFT:
+  case CTRL_KEY('b'):
     if (E.cx != 0) {
       E.cx--;
     } else if (E.cy > 0) {
@@ -535,6 +536,7 @@ void editor_move_cursor(int key) {
     }
     break;
   case ARROW_RIGHT:
+  case CTRL_KEY('f'):
     if (row && E.cx < row->size) {
       E.cx++;
     } else if (row && E.cx == row->size) {
@@ -543,11 +545,13 @@ void editor_move_cursor(int key) {
     }
     break;
   case ARROW_UP:
+  case CTRL_KEY('p'):
     if (E.cy != 0) {
       E.cy--;
     }
     break;
   case ARROW_DOWN:
+  case CTRL_KEY('n'):
     if (E.cy < E.numrows) {
       E.cy++;
     }
@@ -620,6 +624,10 @@ void editor_process_keypress() {
     }
     break;
 
+  case CTRL_KEY('b'):
+  case CTRL_KEY('f'):
+  case CTRL_KEY('n'):
+  case CTRL_KEY('p'):
   case ARROW_UP:
   case ARROW_DOWN:
   case ARROW_LEFT:
