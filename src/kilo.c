@@ -37,6 +37,11 @@ enum editor_key {
   PAGE_DOWN
 };
 
+enum editor_highlight {
+  HL_NORMAL = 0,
+  HL_NUMBER
+};
+
 /*** data ***/
 
 typedef struct erow {
@@ -44,6 +49,7 @@ typedef struct erow {
   int rsize;
   char *chars;
   char *render;
+  unsigned char *hl;
 } erow;
 
 struct editor_config {
@@ -180,6 +186,27 @@ int get_window_size(int* rows, int *cols) {
   }
 }
 
+/*** syntax highlighting ***/
+
+void editor_update_syntax(erow *row) {
+  row->hl = realloc(row->hl, row->rsize);
+  memset(row->hl, HL_NORMAL, row->rsize);
+
+  int i;
+  for (i = 0; i < row->rsize; i++) {
+    if (isdigit(row->render[i])) {
+      row->hl[i] = HL_NUMBER;
+    }
+  }
+}
+
+int editor_syntax_to_color(int hl) {
+  switch (hl) {
+    case HL_NUMBER: return 31;
+    default: return 37;
+  }
+}
+
 /*** row operations ***/
 
 int editor_row_cx_to_rx(erow *row, int cx) {
@@ -227,6 +254,8 @@ void editor_update_row(erow *row) {
   }
   row->render[idx] = '\0';
   row->rsize = idx;
+
+  editor_update_syntax(row);
 }
 
 void editor_insert_row(int at, char *s, size_t len) {
@@ -242,6 +271,7 @@ void editor_insert_row(int at, char *s, size_t len) {
 
   E.row[at].rsize = 0;
   E.row[at].render = NULL;
+  E.row[at].hl = NULL;
   editor_update_row(&E.row[at]);
 
   E.numrows++;
@@ -251,6 +281,7 @@ void editor_insert_row(int at, char *s, size_t len) {
 void editor_free_row(erow *row) {
   free(row->render);
   free(row->chars);
+  free(row->hl);
 }
 
 void editor_del_row(int at) {
@@ -530,16 +561,21 @@ void editor_draw_rows(struct abuf *ab) {
       if (len < 0) len = 0;
       if (len > E.screencols) len = E.screencols;
       char *c = &E.row[filerow].render[E.coloff];
+      unsigned char *hl = &E.row[filerow].hl[E.coloff];
       int j;
       for (j = 0; j < len; j++) {
-	if (isdigit(c[j])) {
-	  ab_append(ab, "\x1b[31m", 5);
-	  ab_append(ab, &c[j], 1);
+	if (hl[j] == HL_NORMAL) {
 	  ab_append(ab, "\x1b[39m", 5);
+	  ab_append(ab, &c[j], 1);
 	} else {
+	  int color = editor_syntax_to_color(hl[j]);
+	  char buf[16];
+	  int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", color);
+	  ab_append(ab, buf, clen);
 	  ab_append(ab, &c[j], 1);
 	}
       }
+      ab_append(ab, "\x1b[39m", 5);
     }
 
     ab_append(ab, "\x1b[K", 3);
